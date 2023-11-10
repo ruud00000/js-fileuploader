@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const app = express();
-const port = 3000;
+const port = 3001;
 
 // Set up a storage engine to define where files will be stored
 const storage = multer.diskStorage({
@@ -10,7 +10,7 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/'); // Uploads will be stored in the 'uploads/' directory
   },
   filename: (req, file, cb) => {
-    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+    cb(null, file.originalname);
   },
 });
 
