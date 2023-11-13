@@ -2,7 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const app = express();
-const port = 3001;
+const port = 4002;
 
 // Set up a storage engine to define where files will be stored
 const storage = multer.diskStorage({
