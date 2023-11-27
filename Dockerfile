@@ -30,7 +30,7 @@ USER root
 COPY . .
 
 # Write access toevoegen voor group owners (node:x:1000:node) voor map uploads 
-RUN chmod g+w /usr/src/app/uploads
+RUN chmod g+w /usr/src/app/public/uploads
 
 # Include an SSH Daemon in Dockerfile for SSH access: ssh root@<ipaddress of container>
 # Find container ip address: docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' CONTAINER_NAME

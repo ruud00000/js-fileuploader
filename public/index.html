@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WKB Bestuurapp</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">    
+    <meta name="description" content="WKB Bestuurapp">
+    <!--<meta http-equiv="Permissions-Policy" content="interest-cohort=()"> -->
+    <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+    <img id="logo" src="assets/logo_black_2x.png" alt="Winterswijkse kegelbond logo" height="25">
+    <div id="knoppen">
+        <h1>Uitslagen uploaden</h1>
+        <form enctype="multipart/form-data">
+            <input type="file" id="fileInput" name="file">
+            <label class="file-input" for="fileInput">Selecteer bestand</label>
+            <button type="button" onclick="uploadFile()">Upload bestand</button>
+        </form>
+        <p id="message"></p>
+    </div>
+</body>
+</html>
+
+<script>
+    function uploadFile() {
+        const fileInput = document.getElementById('fileInput');
+        const formData = new FormData();
+
+        formData.append('file', fileInput.files[0]);
+
+        fetch('/upload', {
+            method: 'POST',
+            body: formData,
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the message on the page
+            document.getElementById('message').innerText = data.message;
+        })
+        .then(setTimeout(() => {
+            //formData.data.message = '' 
+            document.getElementById('message').innerText = ''
+            }, 5000))
+        .catch(error => {
+            console.error('Error:', error);
+        })
+    }
+</script>
