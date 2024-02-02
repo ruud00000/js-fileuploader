@@ -1,3 +1,6 @@
+public/pdfs/*
+public/uploads/*
+
 /conf
 /logs
 

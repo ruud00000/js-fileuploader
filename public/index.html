@@ -18,6 +18,13 @@
             <label class="file-input" for="fileInput">Selecteer bestand</label>
             <button type="button" onclick="uploadFile()">Upload bestand</button>
         </form>
+        <br>
+        <h1>Excel bestand converteren</h1>
+        <form >
+            
+            <button type="button" onclick="convertFile()">Converteer bestand</button>
+        </form>
+        <br>
         <p id="message"></p>
     </div>
 </body>
@@ -25,10 +32,10 @@
 
 <script>
     function uploadFile() {
-        const fileInput = document.getElementById('fileInput');
-        const formData = new FormData();
+        const fileInput = document.getElementById('fileInput')
+        const formData = new FormData()
 
-        formData.append('file', fileInput.files[0]);
+        formData.append('file', fileInput.files[0])
 
         fetch('/upload', {
             method: 'POST',
@@ -37,14 +44,32 @@
         .then(response => response.json())
         .then(data => {
             // Update the message on the page
-            document.getElementById('message').innerText = data.message;
+            document.getElementById('message').innerText = data.message
         })
         .then(setTimeout(() => {
             //formData.data.message = '' 
             document.getElementById('message').innerText = ''
             }, 5000))
         .catch(error => {
-            console.error('Error:', error);
+            console.error(error)
+        })
+    }
+
+    function convertFile() {
+        fetch('/convert', {
+            method: 'GET',
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Update the message on the page
+            document.getElementById('message').innerText = data.message
+        })
+        .then(setTimeout(() => {
+            //formData.data.message = '' 
+            document.getElementById('message').innerText = ''
+            }, 5000))
+        .catch(error => {
+            console.error(error)
         })
     }
 </script>
