@@ -9,53 +9,61 @@ const fs = require('fs/promises')
 
 const app = express()
 const port = 3002
-/*
-    add_header Access-Control-Allow-Origin *;
-    add_header Access-Control-Allow-Methods 'POST, GET, OPTIONS';
-    add_header Access-Control-Allow-Headers Content-Type;
-*/
-  // Example usage
-  // const excelFilePath = path.join(__dirname, 'public/uploads', 'excel-file.xlsx')
-  const outputFolder = path.join(__dirname, 'public/pdfs')
+const outputFolder = path.join(__dirname, 'public/pdfs')
+let newMessage = ''
 
 // Serve static files from the 'uploads/' directory
 app.use(express.static('public'))
-//app.use(cors())
+app.use(cors())
 app.use(fileUpload())
 
-// Serve your HTML page
+// Serve HTML page
 app.get('/',   
   (req, res, next) => {
     next()
   }, 
   (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'))
+})
+
+// File download endpoint
+app.get('/file/:filename',   
+(req, res, next) => {
+  next()
+}, 
+(req, res) => {
+  const { filename } = req.params
+  const filePath = path.join(outputFolder, filename)
+  console.log(filePath)
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error('Error sending file:', err);
+      res.status(500).send('Internal Server Error');
+    } 
   })
+})
 
-  let newMessage = ''
+// File upload endpoint
+app.post('/upload', (req, res) => {
+  if (!req.files || Object.keys(req.files).length === 0) {
+    res.status(400).json({ message: 'Er zijn geen bestanden geupload.' })
+    return
+  }
 
-  // File upload endpoint
-  app.post('/upload', (req, res) => {
-    if (!req.files || Object.keys(req.files).length === 0) {
-      res.status(400).json({ message: 'Er zijn geen bestanden geupload.' })
-      return
+  const uploadedFile = req.files.file
+  const uploadPath = path.join(__dirname, 'public/uploads', uploadedFile.name)
+
+  uploadedFile.mv(uploadPath, (err) => {
+    if (err) {
+      return res.status(500).send(err)
     }
 
-    const uploadedFile = req.files.file
-    const uploadPath = path.join(__dirname, 'public/uploads', uploadedFile.name)
+    // After successful file upload, update the message
+    newMessage = 'Het bestand is geupload!'
 
-    uploadedFile.mv(uploadPath, (err) => {
-      if (err) {
-        return res.status(500).send(err)
-      }
-
-      // After successful file upload, update the message
-      newMessage = 'Het bestand is geupload!'
-
-      res.json({ message: newMessage })
-    })
-  }
-  )
+    res.json({ message: newMessage })
+  })
+})
 
 
 // Convert Excel worksheets from workbook to pdfs
@@ -83,49 +91,42 @@ app.post('/uploadconvert',
 
   const uploadedFile = req.files.file
   // const uploadPath = path.join(__dirname, 'public/uploads', uploadedFile.name)
-  const newName = 'competitie2023' + path.extname(uploadedFile.name); 
-  const uploadPath = path.join(__dirname, 'public/uploads', newName);
+  const newName = 'competitie2023' + path.extname(uploadedFile.name);
+  const uploadPath = path.join(__dirname, 'public/uploads', newName)
 
   const moveFile = () => {
     return new Promise((resolve, reject) => {
       uploadedFile.mv(uploadPath, (err) => {
         if (err) {
-          reject(err);
+          reject(err)
         } else {
-          resolve();
+          resolve()
         }
-      });
-    });
+      })
+    })
   }
 
   try {
     // Move the uploaded file and wait for the operation to finish
     await moveFile();
   
-    const excelFilePath = uploadPath;
-  
-    // Wait for 5 seconds
-    // console.log('even wachten...');
-    // await new Promise(resolve => setTimeout(resolve, 5000));
-  
-    // Log messages after waiting
-    console.log('bestand ', excelFilePath, 'converteren...');
+    const excelFilePath = uploadPath  
+    
+    console.log('bestand ', excelFilePath, 'converteren...')
   
     // convert uploaded file
-    await excelToPdf(excelFilePath, outputFolder);
+    await excelToPdf(excelFilePath, outputFolder)
   
     // After successful file upload, update the message
     newMessage = 'Het bestand is geupload en geconverteerd!' 
   
     // Send a response or perform other actions
-    res.json({ message: newMessage });
+    res.json({ message: newMessage })
   } catch (error) {
     // Handle errors
-    console.error('Error:', error);
-    res.status(500).send(error.message || 'Internal Server Error');
+    console.error('Error:', error)
+    res.status(500).send(error.message || 'Internal Server Error')
   }
-
-
 })
 
 const server = app.listen(port, () => {
@@ -147,11 +148,36 @@ async function excelToPdf(excelFilePath, outputFolder) {
     return 
   }
   let result = true
+  let wsCounter = 0
+  // Kolombreedtes handmatig opgeven:
+  const colWidths = [
+    // individueel: 
+    [40, 150, 40, 40, 100, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40], 
+    [40, 150, 40, 40, 100, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40],
+    [40, 150, 40, 40, 100, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40],
+    [40, 150, 40, 40, 100, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40],
+    [40, 150, 40, 40, 100, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40],
+    [40, 150, 40, 40, 100, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40],
+    [40, 150, 40, 40, 100, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40],
+    [40, 150, 40, 40, 100, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40],
+    // teams:
+    [40, 150, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40],  
+    [40, 150, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40],
+    [40, 150, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40],
+    [40, 150, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40]
+  ]
+  const wsNames = [
+    'CHA', 'CHB', 'CHC1', 'CHC2', 
+    'CDA', 'CDB', 'CDC1', 'CDC2', 
+    'CHT1', 'CHT2', 'CDT1', 'CDT2'
+  ]
+
   const worksheets = workbook.worksheets
   console.log('aantal werkbladen in ', excelFilePath, ': ', worksheets.length)
 
   for (let i = 0; i < worksheets.length; i++) {
     if (!(worksheets[i].state == 'hidden') && i != 10) {  // sheet10 is invoersheet
+      
       const worksheet = worksheets[i]
       
       const pdfDoc = await PDFDocument.create()
@@ -162,54 +188,30 @@ async function excelToPdf(excelFilePath, outputFolder) {
 
       const cellHeight = 17
 
-      /*const colWidths = []
-      let colWidth = 0
-      worksheet.columns.forEach((column, colNumber) => {
-        // console.log(`Column ${colNumber}: Width - ${column.width}`)
-        if (typeof column.width == 'undefined') {
-          colWidth = 75
-        } else {
-          colWidth = column.width
-        }
-        // const colWidth = typeof column.width == 'undefined' ? 75 : column.width
-        colWidths.push(colWidth)
-      })*/
-      // Kolombreedtes handmatig opgeven:
-      const colWidths = [ 
-        40, 150, 40, 40, 100, 40, 40, 40, 40, 40, 
-        40, 40, 40, 40, 40, 40, 40, 40, 40, 40,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-      let x = 0
+      let x = 20 // linkermarge
       let text = ''
 
       worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
         if (!row.hidden) {
-          //cellWidth = worksheet.getColumn(colNumber).width
           row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
             const col = worksheet.getColumn(colNumber)
             if (!col.hidden) {
               if (cell.text && cell.style.numFmt === '0.00') {
-                // console.log('cell style: ', cell.style, 'value: ', cell.text, 'format: ', formatCell(cell.text))
                 text = formatCell(cell.text)
               } else {
                 text = cell.text ? cell.text : ''
               }
-              
-              //console.log('text: ', text, 'type: ', cell.type)
-              // const x = (colNumber - 1) * cellWidth
               const y = height - (rowNumber) * cellHeight
-
-              pdfPage.drawText(text, { x, y, font: pdfFont, size: 12 })
-          
-              x += colWidths[colNumber-1]
+              pdfPage.drawText(text, { x, y, font: pdfFont, size: 12 })   
+              x += colWidths[wsCounter][colNumber-1]   
             }
           })
         }
-        x = 0
+        x = 20
       })
 
       const pdfBytes = await pdfDoc.save()
-      const pdfFileName = `${outputFolder}/worksheet_${i + 1}.pdf`
+      const pdfFileName = `${outputFolder}/${wsNames[wsCounter]}.pdf`
 
       try {
         await fs.writeFile(pdfFileName, pdfBytes)
@@ -225,12 +227,9 @@ async function excelToPdf(excelFilePath, outputFolder) {
       } else {
         newMessage = 'Converteren naar pdf-bestanden is niet gelukt.'
       }
+      wsCounter++
     }
   }
-}
-
-function isTwoDecimals(value) {
-  return !isNaN(value) && value % 1 !== 0 && value.toString().split('.')[1].length === 2;
 }
 
 function formatCell(text) {
