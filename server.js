@@ -2,6 +2,7 @@ const express = require('express')
 const fileUpload = require('express-fileupload')
 const path = require('path')
 const cors = require('cors')
+const dotenv = require('dotenv')
 // for convert:
 const ExcelJS = require('exceljs')
 const { PDFDocument, StandardFonts } = require('pdf-lib')
@@ -11,6 +12,14 @@ const app = express()
 const port = 3002
 const outputFolder = path.join(__dirname, 'public/pdfs')
 let newMessage = ''
+
+// init dotenv
+dotenv.config()
+
+// init mail values
+const to = process.env.MAILTO  
+const subject = 'WKB upload'
+let mailText = ''
 
 // Serve static files from the 'uploads/' directory
 app.use(express.static('public'))
@@ -106,6 +115,35 @@ app.post('/uploadconvert',
     })
   }
 
+  const sendMail = (to, subject, mailtext) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const payload = {
+          to: to,
+          subject: subject,
+          text: mailtext
+      }
+        const response = await fetch(`${process.env.MAIL_URL}/send-email`, {        
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+  
+        if (!response.ok) {
+          throw new Error('Mail sturen is niet gelukt.')
+        }
+  
+        const data = await response.json()
+    
+      } catch (error) {
+        console.error(error)
+      }
+    })
+  }
+
   try {
     // Move the uploaded file and wait for the operation to finish
     await moveFile();
@@ -115,17 +153,24 @@ app.post('/uploadconvert',
     console.log('bestand ', excelFilePath, 'converteren...')
   
     // convert uploaded file
-    await excelToPdf(excelFilePath, outputFolder)
+    await excelToPdf(excelFilePath, outputFolder, uploadedFile)
   
     // After successful file upload, update the message
-    newMessage = 'Het bestand is geupload en geconverteerd!' 
+    // newMessage = 'Het bestand is geupload en geconverteerd!' 
+    // mailText += `Bestand ${excelFilePath} werd geconverteerd.\n`
   
     // Send a response or perform other actions
     res.json({ message: newMessage })
+    sendMail(to, subject, mailText)
+    mailText = ''
+
   } catch (error) {
     // Handle errors
     console.error('Error:', error)
     res.status(500).send(error.message || 'Internal Server Error')
+    mailText += `Fout bij converteren: ${error}.\n`
+    sendMail(to, subject, mailText)
+    mailText = '' 
   }
 })
 
@@ -137,14 +182,16 @@ module.exports = server
 
 
 
-async function excelToPdf(excelFilePath, outputFolder) {
+async function excelToPdf(excelFilePath, outputFolder, uploadedFile) {
   const workbook = new ExcelJS.Workbook()
   
   try {
     await workbook.xlsx.readFile(excelFilePath) 
     console.log('Reading Excel file')
+    mailText += `Bestand ${uploadedFile.name} wordt gelezen.\n`
   } catch (error) {
     console.error('Error reading Excel file:', error.message)  
+    mailText += `Fout bij lezen Excel bestand: ${error.nmessage}.\n`
     return 
   }
   let result = true
@@ -174,6 +221,7 @@ async function excelToPdf(excelFilePath, outputFolder) {
 
   const worksheets = workbook.worksheets
   console.log('aantal werkbladen in ', excelFilePath, ': ', worksheets.length)
+  mailText+= `Aantal werkbladen in ${excelFilePath}: ${worksheets.length}.\n`
 
   for (let i = 0; i < worksheets.length; i++) {
     if (!(worksheets[i].state == 'hidden') && i != 10) {  // sheet10 is invoersheet
@@ -216,16 +264,20 @@ async function excelToPdf(excelFilePath, outputFolder) {
       try {
         await fs.writeFile(pdfFileName, pdfBytes)
         console.log(`PDF file created: ${pdfFileName}`)
+        mailText += `PDF bestand gemaakt: ${pdfFileName}.\n`
       } catch (error) {
         console.error(`Error writing PDF file ${pdfFileName}:`, error.message)
+        mailText += `Fout bij maken PDF bestand ${pdfFileName}: ${error.message}.\n`
         result = false
       }
     
       // After successful conversion, update the message
       if (result) {
         newMessage = 'Excel bestand is geconverteerd naar pdf-bestanden!'
+        mailText += `Excel bestand is geconverteerd naar pdf-bestanden.\n`
       } else {
         newMessage = 'Converteren naar pdf-bestanden is niet gelukt.'
+        mailText += `Converteren naar pdf-bestanden is niet gelukt.\n`
       }
       wsCounter++
     }

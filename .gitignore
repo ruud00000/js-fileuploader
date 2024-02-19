@@ -1,5 +1,8 @@
 public/pdfs/*
 public/uploads/*
+ecosystem.*
+.env*
+google*.html
 
 /conf
 /logs
