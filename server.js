@@ -80,10 +80,12 @@ app.get('/convert',
   (req, res, next) => {
     next()
   }, 
-  (req, res) => { 
-  excelToPdf(excelFilePath, outputFolder)
-
-  res.json({ message: newMessage })
+  async (req, res) => { 
+    const file = path.join(__dirname, 'public/uploads', 'competitie2023.xlsx')
+    newMessage = "Excel bestand wordt geconverteerd..."
+    await excelToPdf(file, outputFolder, file)
+      
+    res.json({ message: newMessage })
   
 })
 
@@ -115,8 +117,7 @@ app.post('/uploadconvert',
     })
   }
 
-  const sendMail = (to, subject, mailtext) => {
-    return new Promise(async (resolve, reject) => {
+  const sendMail = async (to, subject, mailtext) => {    
       try {
         const payload = {
           to: to,
@@ -140,8 +141,7 @@ app.post('/uploadconvert',
     
       } catch (error) {
         console.error(error)
-      }
-    })
+      }    
   }
 
   try {
@@ -156,8 +156,8 @@ app.post('/uploadconvert',
     await excelToPdf(excelFilePath, outputFolder, uploadedFile)
   
     // After successful file upload, update the message
-    // newMessage = 'Het bestand is geupload en geconverteerd!' 
-    // mailText += `Bestand ${excelFilePath} werd geconverteerd.\n`
+    newMessage = 'Het bestand is geupload en geconverteerd!' 
+    mailText += `Bestand ${excelFilePath} werd geconverteerd.\n`
   
     // Send a response or perform other actions
     res.json({ message: newMessage })
@@ -263,25 +263,24 @@ async function excelToPdf(excelFilePath, outputFolder, uploadedFile) {
 
       try {
         await fs.writeFile(pdfFileName, pdfBytes)
-        console.log(`PDF file created: ${pdfFileName}`)
-        mailText += `PDF bestand gemaakt: ${pdfFileName}.\n`
+        console.log(`PDF file created: ${pdfFileName}`)        
       } catch (error) {
-        console.error(`Error writing PDF file ${pdfFileName}:`, error.message)
-        mailText += `Fout bij maken PDF bestand ${pdfFileName}: ${error.message}.\n`
+        console.error(`Error writing PDF file ${pdfFileName}:`, error.message)        
         result = false
       }
     
       // After successful conversion, update the message
       if (result) {
-        newMessage = 'Excel bestand is geconverteerd naar pdf-bestanden!'
-        mailText += `Excel bestand is geconverteerd naar pdf-bestanden.\n`
+        //newMessage = 'Excel bestand is geconverteerd naar pdf-bestand!'
+        mailText += `PDF bestand ${pdfFileName} is gemaakt.\n`
       } else {
-        newMessage = 'Converteren naar pdf-bestanden is niet gelukt.'
-        mailText += `Converteren naar pdf-bestanden is niet gelukt.\n`
+        //newMessage = 'Converteren naar pdf-bestand is niet gelukt.'
+        mailText += `Fout bij maken PDF bestand ${pdfFileName}: ${error.message}.\n`
       }
       wsCounter++
     }
   }
+  newMessage = 'Het bestand is geconverteerd!'
 }
 
 function formatCell(text) {
