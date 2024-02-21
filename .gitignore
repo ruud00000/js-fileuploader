@@ -3,8 +3,8 @@ public/uploads/*
 ecosystem.*
 .env*
 google*.html
-tests/
 archive/
+tests/
 
 /conf
 /logs
