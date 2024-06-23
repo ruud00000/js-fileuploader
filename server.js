@@ -9,12 +9,38 @@ const { PDFDocument, StandardFonts } = require('pdf-lib')
 const fs = require('fs/promises')
 
 const app = express()
-const port = 3002
 const outputFolder = path.join(__dirname, 'public/pdfs')
 let newMessage = ''
 
 // init dotenv
 dotenv.config()
+
+// get environment variables
+const PORT = process.env.PORT || 3002
+const ORIGIN_URL_1 = process.env.ORIGIN_URL_1 || '' 
+const ORIGIN_URL_2 = process.env.ORIGIN_URL_2 || '' 
+const ORIGIN_URL_3 = process.env.ORIGIN_URL_3 || '' 
+
+const allowedOrigins = [
+  ORIGIN_URL_1, 
+  ORIGIN_URL_2,
+  ORIGIN_URL_3];
+
+// CORS middleware configuration
+const corsOptions = {    
+  origin: (origin, callback) => {
+  if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true)
+  } else {
+      callback(new Error('Not allowed by CORS'))
+  }
+},
+  methods: ['GET', 'POST'], // Add other HTTP methods as needed    
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}
+
+app.use(cors(corsOptions))
 
 // init mail values
 const to = process.env.MAILTO  
@@ -174,8 +200,8 @@ app.post('/uploadconvert',
   }
 })
 
-const server = app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`)
+const server = app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`)
 })
 
 module.exports = server
