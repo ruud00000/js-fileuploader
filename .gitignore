@@ -5,6 +5,7 @@ ecosystem.*
 google*.html
 archive/
 tests/
+backup/
 
 /conf
 /logs

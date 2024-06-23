@@ -1,5 +1,6 @@
 *.tgz
 .vscode/
 .env*
+backup/
 
 

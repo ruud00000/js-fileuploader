@@ -1,14 +1,21 @@
-const express = require('express')
-const fileUpload = require('express-fileupload')
-const path = require('path')
-const cors = require('cors')
-const dotenv = require('dotenv')
+import express from 'express'
+import fileUpload from 'express-fileupload'
+import { fileURLToPath } from 'url'
+import path from 'path'
+import cors from 'cors'
+import dotenv from 'dotenv'
 // for convert:
-const ExcelJS = require('exceljs')
-const { PDFDocument, StandardFonts } = require('pdf-lib')
-const fs = require('fs/promises')
+import ExcelJS from 'exceljs'
+import { PDFDocument, StandardFonts } from 'pdf-lib'
+import fs from 'fs/promises'
+import { sendMail } from 'wkb-utils'
+
 
 const app = express()
+// Get the file URL of the current module
+const __filename = fileURLToPath(import.meta.url);
+// Get the directory name of the current module
+const __dirname = path.dirname(__filename);
 const outputFolder = path.join(__dirname, 'public/pdfs')
 let newMessage = ''
 
@@ -49,7 +56,6 @@ let mailText = ''
 
 // Serve static files from the 'uploads/' directory
 app.use(express.static('public'))
-app.use(cors())
 app.use(fileUpload())
 
 // Serve HTML page
@@ -143,33 +149,6 @@ app.post('/uploadconvert',
     })
   }
 
-  const sendMail = async (to, subject, mailtext) => {    
-      try {
-        const payload = {
-          to: to,
-          subject: subject,
-          text: mailtext
-      }
-        const response = await fetch(`${process.env.MAIL_URL}/send-email`, {        
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(payload)
-        })
-  
-        if (!response.ok) {
-          throw new Error('Mail sturen is niet gelukt.')
-        }
-  
-        const data = await response.json()
-    
-      } catch (error) {
-        console.error(error)
-      }    
-  }
-
   try {
     // Move the uploaded file and wait for the operation to finish
     await moveFile();
@@ -185,18 +164,17 @@ app.post('/uploadconvert',
     newMessage = 'Het bestand is geupload en geconverteerd!' 
     mailText += `Bestand ${excelFilePath} werd geconverteerd.\n`
   
+    await sendMail(to, subject, mailText)
+    mailText = ''
     // Send a response or perform other actions
     res.json({ message: newMessage })
-    sendMail(to, subject, mailText)
-    mailText = ''
-
   } catch (error) {
     // Handle errors
+    mailText += `Fout bij converteren: ${error}.\n`
+    await sendMail(to, subject, mailText)
+    mailText = '' 
     console.error('Error:', error)
     res.status(500).send(error.message || 'Internal Server Error')
-    mailText += `Fout bij converteren: ${error}.\n`
-    sendMail(to, subject, mailText)
-    mailText = '' 
   }
 })
 
@@ -204,8 +182,8 @@ const server = app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`)
 })
 
-module.exports = server
 
+export default server
 
 
 async function excelToPdf(excelFilePath, outputFolder, uploadedFile) {
@@ -312,6 +290,6 @@ async function excelToPdf(excelFilePath, outputFolder, uploadedFile) {
 function formatCell(text) {
   //let result = text.substring(0,4)
   let position = text.indexOf('.')
-  result = position == -1 ? text + '.00' : text.substring(0,position+3)
+  const result = position == -1 ? text + '.00' : text.substring(0,position+3)
   return result
 }
