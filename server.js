@@ -24,14 +24,18 @@ dotenv.config()
 
 // get environment variables
 const PORT = process.env.PORT || 3002
+const ORIGIN_SAMEURL = `http://localhost:${PORT}`
 const ORIGIN_URL_1 = process.env.ORIGIN_URL_1 || '' 
 const ORIGIN_URL_2 = process.env.ORIGIN_URL_2 || '' 
 const ORIGIN_URL_3 = process.env.ORIGIN_URL_3 || '' 
+const ORIGIN_URL_4 = process.env.ORIGIN_URL_4 || '' 
 
 const allowedOrigins = [
+  ORIGIN_SAMEURL, 
   ORIGIN_URL_1, 
   ORIGIN_URL_2,
-  ORIGIN_URL_3];
+  ORIGIN_URL_3,
+  ORIGIN_URL_4];
 
 // CORS middleware configuration
 const corsOptions = {    
@@ -133,9 +137,9 @@ app.post('/uploadconvert',
   }
 
   const uploadedFile = req.files.file
-  // const uploadPath = path.join(__dirname, 'public/uploads', uploadedFile.name)
-  const newName = 'competitie2023' + path.extname(uploadedFile.name);
-  const uploadPath = path.join(__dirname, 'public/uploads', newName)
+  const uploadPath = path.join(__dirname, 'public/uploads', uploadedFile.name)
+  // const newName = 'competitie2023' + path.extname(uploadedFile.name);
+  // const uploadPath = path.join(__dirname, 'public/uploads', newName)
 
   const moveFile = () => {
     return new Promise((resolve, reject) => {

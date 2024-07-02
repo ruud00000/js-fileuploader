@@ -1,6 +1,6 @@
 {
   "name": "js-fileuploader",
-  "version": "1.1.12",
+  "version": "1.1.13",
   "description": "",
   "type": "module",
   "main": "server.js",
@@ -26,6 +26,6 @@
   "devDependencies": {
     "jest": "^29.7.0",
     "supertest": "^6.3.3",
-    "types-wkb-utils": "^1.0.1"
+    "types-wkb-utils": "^1.0.3"
   }
 }
